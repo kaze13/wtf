@@ -1,0 +1,13 @@
+{
+  "host": "strikingly-hangman.herokuapp.com",
+  "path": "/game/on",
+  "port": 443,
+  "playerId": "cml_hawke0@163.com",
+  "dictPath": "./dict",
+  "dictList": [
+    "small",
+    "large",
+    "huge",
+    "insane"
+  ]
+}
