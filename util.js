@@ -1,9 +1,6 @@
 var fs = require('fs');
 
-cleanDict('small');
-cleanDict('large');
-cleanDict('huge');
-cleanDict('insane');
+cleanDict('wtf');
 
 function cleanDict(path) {
   var content = fs.readFileSync(path, {encoding: 'utf8'});

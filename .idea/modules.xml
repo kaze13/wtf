@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/wtf.iml" filepath="$PROJECT_DIR$/.idea/wtf.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wtf_ruby/wtf_ruby.iml" filepath="$PROJECT_DIR$/wtf_ruby/wtf_ruby.iml" />
     </modules>
   </component>
 </project>

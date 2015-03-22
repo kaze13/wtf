@@ -367,6 +367,9 @@ Hangman.prototype.canUpgradeDict = function () {
  * @param {number} length
  */
 Hangman.prototype.buildSubDictOfLength = function (length) {
+  if (!this.dict_[this.currentDictLevel_]) {
+    this.dict_[this.currentDictLevel_][length] = [];
+  }
   this.currentSubDict_ = this.dict_[this.currentDictLevel_][length].slice();
 };
 

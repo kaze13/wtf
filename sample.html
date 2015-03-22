@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+    <style>
+        .image{
+            width:800px;
+            height:600px;
+            background-color: #2C333B;
+            position: relative;
+            resize: vertical;
+            overflow: auto;
+        }
+        .dialog {
+            position: absolute;
+            top: 50%;
+            margin-top: -250px;
+            background: #2C333B;
+            height: 440px;
+            width:323px;
+            border: 1px solid black;
+            border-radius: 10px;
+        }
+
+        .portrait{
+            width: 155px;
+            height: 155px;
+            left:84px;
+            top:60px;
+            border-radius: 150px ;
+            border: 6px solid #E7DECD;
+            position:absolute;
+            background: url(http://cdn.bavotasan.com/wp-content/uploads/2011/02/desktop.jpg) no-repeat;
+        }
+        .upside{
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            width: 100%;
+            height:138px;
+            background-color: #E7DECD;
+        }
+
+        .downside{
+            height:302px;
+        }
+
+        .info{
+            margin-top:115px;
+            text-align:center;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        .name{
+            color:#E7DECD;
+            font-size:18px
+        }
+
+        .title{
+            color:#535D69;
+        }
+
+        .follow-btn{
+            background-color: #C44B30;
+            color:#E8E0CD;
+        }
+
+        .bottom{
+            position: absolute;
+            bottom:0px;
+        }
+
+        .btn-grp{
+            text-align:center;
+        }
+        .bottom-left{
+            display: inline-block;
+        }
+
+        .bottom-right{
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="image">
+        <div class="dialog">
+            <div class="upside">
+                <div class="icon"></div>
+            </div>
+            <div class="portrait"></div>
+            <div class="downside">
+                <div class="info">
+                    <div class="name">Adam Fuck</div>
+                    <div class="title">Bullshitter</div>
+                </div>
+                <div class="btn-grp">
+                    <button class="follow-btn">follow</button>
+                </div>
+                <div class="bottom">
+                    <div class="bottom-left">1000 FOLLOWERS</div>
+                    <div class="bottom-right">1000 FOLLOWING</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
