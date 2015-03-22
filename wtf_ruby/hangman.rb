@@ -151,6 +151,7 @@ class Hangman
     @dict[dict_index] = []
     File.open(File.join(@option[:dictPath], name)) do |file|
       file.each do |word|
+        word = word.gsub("\n", '')
         unless @dict[dict_index][word.length]
           @dict[dict_index][word.length] = []
         end
@@ -186,16 +187,20 @@ class Hangman
     end
     negated_set_reg << ']'
     regex = to_be_guessed.gsub('*', negated_set_reg)
-    @current_sub_dict.select! { |word| word.match(regex) }
+    @current_sub_dict.select! { |word| true unless word.match(regex).nil? }
     upgrade_dict_if_need
   end
 
   def reduce_cur_sub_dict_by_chars(characters)
-    @current_sub_dict.select do |word|
-      for i in 0..characters.length - 1
-        next false if word.include?(characters[i])
+    @current_sub_dict.select! do |word|
+      # for i in 0..characters.length - 1
+      #   next false if word.include?(characters[i])
+      # end
+      remove = false
+      characters.each do |char|
+        remove = true if word.include?(char)
       end
-      next true
+      remove ? false : true
     end
     upgrade_dict_if_need
   end
