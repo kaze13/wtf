@@ -2,251 +2,249 @@ require 'net/https'
 require 'uri'
 require 'json'
 require 'logger'
+require 'set'
 
 class Hangman
   def initialize (option)
     @logger = Logger.new(STDOUT)
     @option = option
-    @currentNumberOfGuess = 0
+    @current_number_of_guess = 0
     @dict = []
-    @currentDictLevel = 0
-    @currentSubDict = []
-    @guessedChar = []
+    @current_dict_level = 0
+    @current_sub_dict = []
+    @guessed_char = []
   end
 
   def play
-    loadAllDict
-    startGame
+    load_all_dict
+    start_game
   end
 
-  def nextRound
-    @guessedChar = []
-    @currentDictLevel = 0
-    giveMeAWord
-    buildSubDictOfLength(@currentWord.length)
-    nextGuess
+  private
+
+  def next_round
+    @guessed_char = []
+    @current_dict_level = 0
+    give_me_a_word
+    build_sub_dict_of_len(@current_word.length)
+    next_guess
   end
 
-  def nextGuess
-    if (@passCurrent)
-      @passCurrent = false
-      nextRound
+  def next_guess
+    if @pass_current
+      @pass_current = false
+      next_round
     else
-      guess = makeAGuess
-      if (guessFinished?)
-        if (allFinished?)
-          getResult
+      guess = make_a_guess
+      if guess_finished?
+        if all_finished?
+          get_result
         else
-          nextRound
+          next_round
         end
-      elsif (failed?)
-        getResult
-        nextRound
-      elsif (guessWrong?)
-        @guessedChar << guess
-        reduceCurrentSubDictByChars(guess)
-        nextGuess
+      elsif failed?
+        get_result
+        next_round
+      elsif guess_wrong?
+        @guessed_char << guess
+        reduce_cur_sub_dict_by_chars([guess])
+        next_guess
       else
-        reduceCurrentSubDictByWord(@currentWord)
-        nextGuess
+        reduce_cur_sub_dict_by_word(@current_word)
+        next_guess
       end
     end
   end
 
-  def startGame
-    resObj = sendRequest(generateStartGameRequest(@option[:playerId]))
-    logger.info("Start game response: #{resObj}")
-    @sessionId = resObj[:sessionId]
-    @numberOfWordsToGuess = resObj[:data][:numberOfWordsToGuess]
-    @numberOfGuessAllowedForEachWord = resObj[:data][:numberOfGuessAllowedForEachWord]
-    nextRound
+  def start_game
+    res_obj = send_request(get_start_game_req(@option[:playerId]))
+    @logger.info("Start game response: #{res_obj}")
+    @session_id = res_obj['sessionId']
+    @number_of_words_to_guess = res_obj['data']['numberOfWordsToGuess']
+    @number_of_guess_allowed_for_each_word = res_obj['data']['numberOfGuessAllowedForEachWord']
+    next_round
   end
 
-  def giveMeAWord
-    @currentNumberOfGuess = 0
-    resObj = sendRequest(generateGiveMeAWordRequest(@sessionId))
-    logger.info("Give me a word response: #{resObj}")
-    @currentWord = resObj[:data][:word]
-    @totalWordCount = resObj[:data][:totalWordCount]
-    @wrongGuessCountOfCurrentWord = resObj[:data][:wrongGuessCountOfCurrentWord]
+  def give_me_a_word
+    @current_number_of_guess = 0
+    res_obj = send_request(get_give_me_a_word_req(@session_id))
+    @logger.info("Give me a word response: #{res_obj}")
+    @current_word = res_obj['data']['word']
+    @total_word_count = res_obj['data']['totalWordCount']
+    @wrong_guess_count_of_current_word = res_obj['data']['wrongGuessCountOfCurrentWord']
   end
 
-  def makeAGuess
-    nextGuess = guess
-    logger.info("Next guess: #{nextGuess}")
-    @currentNumberOfGuess += 1
-    resObj = sendRequest(generateMakeAGuessRequest(@sessionId, nextGuess))
-    logger.info("Make a guess response: #{resObj}")
-    @previousWord = @currentWord
-    @currentWord = resObj[:data][:word]
-    @totalWordCount = resObj[:data][:totalWordCount]
-    @wrongGuessCountOfCurrentWord = resObj[:data][:wrongGuessCountOfCurrentWord]
+  def make_a_guess
+    next_guess = guess
+    @logger.info("Next guess: #{next_guess}")
+    @current_number_of_guess += 1
+    res_obj = send_request(get_make_a_guess_req(@session_id, next_guess))
+    @logger.info("Make a guess response: #{res_obj}")
+    @previous_word = @current_word
+    @current_word = res_obj['data']['word']
+    @total_word_count = res_obj['data']['totalWordCount']
+    @wrong_guess_count_of_current_word = res_obj['data']['wrongGuessCountOfCurrentWord']
+    next_guess
   end
 
-  def getResult
-    resObj = sendRequest(generateGetResultRequest(@sessionId))
-    logger.info("Get result response: #{resObj}")
-    @correntWordCount = resObj[:data][:correntWordCount]
-    @totalWordCount = resObj[:data][:totalWordCount]
-    @totalWrongGuessCount = resObj[:data][:totalWrongGuessCount]
-    @score = resObj[:data][:score]
+  def get_result
+    res_obj = send_request(get_get_result_req(@session_id))
+    @logger.info("Get result response: #{res_obj}")
+    @correct_word_count = res_obj['data']['correctWordCount']
+    @total_word_count = res_obj['data']['totalWordCount']
+    @total_wrong_guess_count = res_obj['data']['totalWrongGuessCount']
+    @score = res_obj['data']['score']
   end
 
-  def submitResult
-    sendRequest(generateSubmitResultRequest(@sessionId))
+  def submit_result
+    send_request(get_submit_result_req(@session_id))
   end
 
-  def sendRequest (requestBody)
-    uri = URI('http://www.example.com/todo.cgi')
+  def send_request (request_body)
+    uri = URI(@option[:host])
     req = Net::HTTP::Post.new(uri)
-    req.set_form_data(requestBody)
+    req['Content-Type'] = 'application/json; charset=utf-8'
+    req['Content-Length'] = request_body.length
 
-    res = Net::HTTP.start(uri.hostname, uri.port, :use_ssl => uri.scheme == 'https') do |http|
-      http.request(req)
+    res = Net::HTTP.start(uri.hostname, uri.port, :use_ssl => uri.scheme == 'https') do |protocol|
+      protocol.request(req, request_body.to_json)
     end
 
     case res
       when Net::HTTPSuccess
         return JSON.parse(res.body)
       else
-        raise StandardError(res.value)
+        fail res.value
     end
     #timeout todo
 
   end
 
-  def generateGiveMeAWordRequest(sessionId)
-    return {
-        :sessionId => sessionId,
-        :action => 'nextWord'
-    }
-
+  def get_give_me_a_word_req(session_id)
+    {:sessionId => session_id, :action => 'nextWord'}
   end
 
-  def generateMakeAGuessRequest(sessionId, guess)
-    return {
-        :sessionId => sessionId,
-        :action => 'guessWord',
-        :guess => guess
-    }
+  def get_make_a_guess_req(session_id, guess)
+    {:sessionId => session_id, :action => 'guessWord', :guess => guess}
   end
 
-  def generateStartGameRequest(playerId)
-    return {
-        :playerId => playerId,
-        :action => 'startGame'
-    }
+  def get_start_game_req(player_id)
+    {:playerId => player_id, :action => 'start_game'}
   end
 
-  def generateGetResultRequest(sessionId)
-    return {
-        :sessionId => sessionId,
-        :action => 'getResult'
-    }
+  def get_get_result_req(session_id)
+    {:sessionId => session_id, :action => 'get_result'}
   end
 
-  def generateSubmitResultRequest(sessionId)
-    return {
-        :sessionId => sessionId,
-        :action => 'submitResult'
-    }
+  def get_submit_result_req(session_id)
+    {:sessionId => session_id, :action => 'submit_result'}
   end
 
-  def loadAllDict
+  def load_all_dict
     @option[:dictList].each {
-        |name| loadDict(name)
+        |name| load_dict(name)
     }
   end
 
-  def loadDict(name)
-    dictIndex = @dict.length
-    @dict[dictIndex] = []
+  def load_dict(name)
+    dict_index = @dict.length
+    @dict[dict_index] = []
     File.open(File.join(@option[:dictPath], name)) do |file|
       file.each do |word|
-        unless @dict[dictIndex][word.length]
-          @dict[dictIndex][word.length] = []
+        unless @dict[dict_index][word.length]
+          @dict[dict_index][word.length] = []
         end
-        @dict[dictIndex][word.length] << word
+        @dict[dict_index][word.length] << word
       end
     end
-    logger.info("Dictionary loaded: #{name}")
+    @logger.info("Dictionary loaded: #{name}")
   end
 
-  def upgradeSubDict
-    @currentDictLevel += 1
-    logger.info("Dictionary upgraded to level: #{@currentDictLevel}")
-    buildSubDictOfLength(@currentWord.length)
-    reduceCurrentSubDictByWord(@currentWord)
-    reduceCurrentSubDictByChars(@guessedChar)
+  def upgrade_sub_dict
+    @current_dict_level += 1
+    @logger.info("Dictionary upgraded to level: #{@current_dict_level}")
+    build_sub_dict_of_len(@current_word.length)
+    reduce_cur_sub_dict_by_word(@current_word)
+    reduce_cur_sub_dict_by_chars(@guessed_char)
   end
 
-  def canUpgradeDict?
-    @dict.length > @currentDictLevel + 1
+  def can_upgrade_dict?
+    @dict.length > @current_dict_level + 1
   end
 
-  def buildSubDictOfLength(length)
-    if (!@dict[@currentDictLevel][length])
-      @dict[@currentDictLevel][length] = []
+  def build_sub_dict_of_len(length)
+    unless @dict[@current_dict_level][length]
+      @dict[@current_dict_level][length] = []
     end
-    @currentSubDict = @dict[@currentDictLevel][length].clone
+    @current_sub_dict = @dict[@current_dict_level][length].clone
   end
 
-  def reduceCurrentSubDictByWord(toBeGuessed)
-    negatedSetReg = '[^'
-    toBeGuessed.each_char do |char|
-      if negatedSetReg.include?(char) and (char != '*')
-        negatedSetReg << char
+  def reduce_cur_sub_dict_by_word(to_be_guessed)
+    negated_set_reg = '[^'
+    to_be_guessed.each_char do |char|
+      negated_set_reg << char if (char != '*') && !negated_set_reg.include?(char)
+    end
+    negated_set_reg << ']'
+    regex = to_be_guessed.gsub('*', negated_set_reg)
+    @current_sub_dict.select! { |word| word.match(regex) }
+    upgrade_dict_if_need
+  end
+
+  def reduce_cur_sub_dict_by_chars(characters)
+    @current_sub_dict.select do |word|
+      for i in 0..characters.length - 1
+        next false if word.include?(characters[i])
       end
+      next true
     end
-    negatedSetReg << ']'
-    regex = toBeGuessed.tr('*', negatedSetReg)
-    @currentSubDict.select! { |word| word.match(regex) }
-    upgradeDictIfNecessary
+    upgrade_dict_if_need
   end
 
-  def reduceCurrentSubDictByChars(characters)
-    @currentSubDict.select do |word|
-      characters.each_char do |char|
-        return false if word.include?(char)
-      end
-      return true
-    end
-    upgradeDictIfNecessary
-  end
-
-  def upgradeDictIfNecessary
-    if @currentSubDict.empty?
-      logger.warn("No candidate in dictionary: #{@currentWord}")
-      if canUpgradeDict?
-        upgradeSubDict
+  def upgrade_dict_if_need
+    if @current_sub_dict.empty?
+      @logger.warn("No candidate in dictionary: #{@current_word}")
+      if can_upgrade_dict?
+        upgrade_sub_dict
       else
-        @passCurrent = true
+        @pass_current = true
       end
     end
   end
 
-  def getMostPossibleChar
-    alphaMap = {'A' => 0}
+  def get_most_possible_char (to_be_guessed)
+    alpha_map = {'A' => 0}
     result = 'A'
+    tmp = Set.new
+    @current_sub_dict.each do |word|
+      tmp.clear
+      word.each_char do |char|
+        tmp << char unless to_be_guessed.include?(char) || char == "\n"
+      end
+      tmp.each do |alpha|
+        alpha_map[alpha] = alpha_map[alpha] ? alpha_map[alpha] + 1 : 1
+        result = alpha if alpha_map[alpha] > alpha_map[result]
+      end
+    end
+    result
   end
 
   def guess
-
+    get_most_possible_char(@current_word)
   end
 
-  def guessFinished?
-
+  def guess_finished?
+    !@current_word.include?('*')
   end
 
-  def guessWrong?
-
+  def guess_wrong?
+    @current_word == @previous_word
   end
 
-  def allFinished?
-
+  def all_finished?
+    @total_word_count == @number_of_words_to_guess
   end
 
   def failed?
-
+    @wrong_guess_count_of_current_word == @number_of_guess_allowed_for_each_word
   end
 end
